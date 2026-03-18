@@ -336,6 +336,9 @@ TYPE BOUNDARY_PROP1_TYPE
    REAL(EB) :: M_DOT_PART_ACTUAL     !< Mass flux of all particles (kg/m2/s)
    REAL(EB) :: Q_LEAK=0._EB          !< Heat production of leaking gas (W/m3)
    REAL(EB) :: VEL_ERR_NEW=0._EB     !< Velocity mismatch at mesh or solid boundary (m/s)
+   REAL(EB) :: Q_EMBER=0._EB         !< Heat flux from landed embers (W/m2)
+   REAL(EB) :: EMBER_MASS_ACCUMULATED=0._EB !< Total ember mass on this cell (kg)
+   INTEGER  :: EMBER_COUNT=0         !< Number of embers on this cell
 
    LOGICAL :: BURNAWAY=.FALSE.       !< Indicater if cell can burn away when fuel is exhausted
    LOGICAL :: LAYER_REMOVED=.FALSE.  !< Indicator that at least one layer has been removed during the time step
@@ -910,10 +913,17 @@ TYPE SURFACE_TYPE
    REAL(EB) :: NUSSELT_C1=-1._EB                       !< Re multiplier term for user defined HTC correlation
    REAL(EB) :: NUSSELT_C2=-1._EB                       !< Re adjustment before Pr multiplication for user defined HTC correlation
    REAL(EB) :: NUSSELT_M=-1._EB                        !< Re exponent for user defined HTC correlation
+   REAL(EB) :: EMBER_CONTACT_FRACTION=0.5_EB             !< Fraction of ember area in thermal contact with surface (-)
+   REAL(EB) :: EMBER_CONTACT_HTC=25._EB                 !< Contact heat transfer coefficient (W/m2/K)
+   REAL(EB) :: EMBER_EMISSIVITY=0.9_EB                  !< Emissivity of ember for radiative heat transfer (-)
+   REAL(EB) :: EMBER_IGNITION_FMC=10._EB                !< Fuel moisture content for ignition model (% dry basis)
    REAL(EB) :: EMBER_IGNITION_POWER_MEAN=-1._EB
    REAL(EB) :: EMBER_IGNITION_POWER_SIGMA=0.001_EB
-   REAL(EB) :: EMBER_TRACKING_RATIO=100._EB            !< Ratio of 'real' embers to Lagrangian particles (-)
-   REAL(EB) :: EMBER_YIELD=-1._EB                      !< Mass yield of embers from a burning surface (kg/kg)
+   REAL(EB) :: EMBER_TRACKING_RATIO=100._EB             !< Ratio of 'real' embers to Lagrangian particles (-)
+   REAL(EB) :: EMBER_YIELD=-1._EB                       !< Mass yield of embers from a burning surface (kg/kg)
+   REAL(EB), DIMENSION(5) :: EMBER_IGNITION_COEFFS=(/9.98_EB,-0.263_EB,0.5_EB,0.1_EB,0.005_EB/) !< Logistic ignition coefficients
+   INTEGER  :: EMBER_IGNITION_TYPE=0                     !< 0=power-CDF, 1=logistic, 2=heat-transfer
+   LOGICAL  :: EMBER_HEAT_TRANSFER=.FALSE.               !< Enable heat flux from landed embers to surface
    REAL(EB) :: M_DOT_G_PP_ACTUAL_FAC=1._EB             !< For HRRPUA, scales the solid mass loss if gas H_o_C /= solid H_o_C
    REAL(EB) :: M_DOT_G_PP_ADJUST_FAC=1._EB             !< For MLRPUA, scales the gas production if gas H_o_C /= solid H_o_C
    REAL(EB) :: HOC_EFF                                 !< Effective heat of combustion for S_pyro
