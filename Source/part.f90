@@ -2588,7 +2588,8 @@ REAL(EB) :: UBAR,VBAR,WBAR,UREL,VREL,WREL,QREL,RHO_G,TMP_G,MU_FILM, &
             GX_LOC,GY_LOC,GZ_LOC,DRAG_MAX(3)=0._EB,K_SGS,U_P,KN,M_DOT,&
             EMBER_DENSITY,EMBER_VOLUME=0._EB,ACCEL_X,ACCEL_Y,ACCEL_Z,&
             LP_FORCE,FACE_VOLS(2,2,2),VEL_G_INT(3),VOL_WGT(2,2,2),&
-            EMBER_PACKING_RATIO,LOCAL_PACKING_RATIO,LPC_GEOM_FACTOR
+            EMBER_PACKING_RATIO,LOCAL_PACKING_RATIO,LPC_GEOM_FACTOR, &
+            T_L_SGS,EXP_FACTOR,NOISE_FACTOR,LAP_U,LAP_V,LAP_W,LAP_MAG_SQ,B_SQ
 REAL(EB) :: WGT(2,2,2,3),VEL_G(2,2,2)
 REAL(EB), POINTER, DIMENSION(:,:,:) :: FV_D
 REAL(EB), SAVE :: BETA
@@ -2697,23 +2698,98 @@ ENDIF TRACER_IF
 
 B1  => BOUNDARY_PROP1(LP%B1_INDEX)
 
-! Massive particles undergoing turbulent dispersion (EXPERIMENTAL, under construction)
+! SGS turbulent dispersion for massive particles
 
-IF (LPC%TURBULENT_DISPERSION) THEN
-   ! Built model from ideas in this ref:
-   ! M. Breuer and M. Alletto, Efficient simulation of particle-laden turbulent flows with high mass loadings using LES,
-   ! Int. J. Heat and Fluid Flow, 35:2-12, 2012.
-   ! The basic idea is to add an isotropic turbulent fluctuation to the cell mean velocity components prior to
-   ! computing the drag.
-   DELTA = LES_FILTER_WIDTH(IIG_OLD,JJG_OLD,KKG_OLD)
-   K_SGS = (MU(IIG_OLD,JJG_OLD,KKG_OLD)/RHO(IIG_OLD,JJG_OLD,KKG_OLD)/C_DEARDORFF/DELTA)**2 ! def of Deardorff eddy viscosity
-   U_P = SQRT(TWTH*K_SGS)
-   CALL BOX_MULLER(DW_X,DW_Y)
-   CALL BOX_MULLER(DW_Z,DW_X)
-   UBAR = UBAR + U_P*DW_X
-   VBAR = VBAR + U_P*DW_Y
-   WBAR = WBAR + U_P*DW_Z
-ENDIF
+SGS_SELECT: SELECT CASE (LPC%SGS_MODEL)
+
+   CASE(0) SGS_SELECT  ! Markov-0 random walk (default, existing behavior)
+
+      IF (LPC%TURBULENT_DISPERSION) THEN
+         ! M. Breuer and M. Alletto, Efficient simulation of particle-laden turbulent flows with high mass loadings
+         ! using LES, Int. J. Heat and Fluid Flow, 35:2-12, 2012.
+         DELTA = LES_FILTER_WIDTH(IIG_OLD,JJG_OLD,KKG_OLD)
+         K_SGS = (MU(IIG_OLD,JJG_OLD,KKG_OLD)/RHO(IIG_OLD,JJG_OLD,KKG_OLD)/C_DEARDORFF/DELTA)**2
+         U_P = SQRT(TWTH*K_SGS)
+         CALL BOX_MULLER(DW_X,DW_Y)
+         CALL BOX_MULLER(DW_Z,DW_X)
+         UBAR = UBAR + U_P*DW_X
+         VBAR = VBAR + U_P*DW_Y
+         WBAR = WBAR + U_P*DW_Z
+      ENDIF
+
+   CASE(1) SGS_SELECT  ! Langevin (Markov-1, Ornstein-Uhlenbeck) — Pozorski & Apte (2009)
+
+      ! Recover k_sgs from Deardorff eddy viscosity
+      DELTA = LES_FILTER_WIDTH(IIG_OLD,JJG_OLD,KKG_OLD)
+      K_SGS = (MU(IIG_OLD,JJG_OLD,KKG_OLD)/RHO(IIG_OLD,JJG_OLD,KKG_OLD)/C_DEARDORFF/DELTA)**2
+      U_P = SQRT(TWTH*K_SGS)
+
+      ! Lagrangian SGS timescale: T_L = Delta / sigma_sgs
+      IF (U_P > TWO_EPSILON_EB) THEN
+         T_L_SGS = DELTA / U_P
+      ELSE
+         T_L_SGS = 1.E6_EB
+      ENDIF
+
+      ! Exact Ornstein-Uhlenbeck update (unconditionally stable)
+      EXP_FACTOR = EXP(-DT_P/T_L_SGS)
+      NOISE_FACTOR = SQRT(MAX(0._EB, 1._EB - EXP_FACTOR**2))
+      CALL BOX_MULLER(DW_X,DW_Y)
+      CALL BOX_MULLER(DW_Z,DW_X)
+      LP%U_SGS = LP%U_SGS*EXP_FACTOR + U_P*NOISE_FACTOR*DW_X
+      LP%V_SGS = LP%V_SGS*EXP_FACTOR + U_P*NOISE_FACTOR*DW_Y
+      LP%W_SGS = LP%W_SGS*EXP_FACTOR + U_P*NOISE_FACTOR*DW_Z
+      IF (TWO_D) LP%V_SGS = 0._EB
+
+      UBAR = UBAR + LP%U_SGS
+      VBAR = VBAR + LP%V_SGS
+      WBAR = WBAR + LP%W_SGS
+
+   CASE(2) SGS_SELECT  ! Differential filter — Park, Bassenne, Urzay & Moin (2017)
+
+      ! Recover k_sgs from Deardorff eddy viscosity
+      DELTA = LES_FILTER_WIDTH(IIG_OLD,JJG_OLD,KKG_OLD)
+      K_SGS = (MU(IIG_OLD,JJG_OLD,KKG_OLD)/RHO(IIG_OLD,JJG_OLD,KKG_OLD)/C_DEARDORFF/DELTA)**2
+
+      ! Laplacian of resolved velocity at particle cell (central differences)
+      LAP_U = (U(IIG_OLD+1,JJG_OLD,KKG_OLD) - 2._EB*U(IIG_OLD,JJG_OLD,KKG_OLD) &
+             + U(IIG_OLD-1,JJG_OLD,KKG_OLD)) / DX(IIG_OLD)**2 &
+             + (U(IIG_OLD,JJG_OLD+1,KKG_OLD) - 2._EB*U(IIG_OLD,JJG_OLD,KKG_OLD) &
+             + U(IIG_OLD,JJG_OLD-1,KKG_OLD)) / DY(JJG_OLD)**2 &
+             + (U(IIG_OLD,JJG_OLD,KKG_OLD+1) - 2._EB*U(IIG_OLD,JJG_OLD,KKG_OLD) &
+             + U(IIG_OLD,JJG_OLD,KKG_OLD-1)) / DZ(KKG_OLD)**2
+      LAP_V = (V(IIG_OLD+1,JJG_OLD,KKG_OLD) - 2._EB*V(IIG_OLD,JJG_OLD,KKG_OLD) &
+             + V(IIG_OLD-1,JJG_OLD,KKG_OLD)) / DX(IIG_OLD)**2 &
+             + (V(IIG_OLD,JJG_OLD+1,KKG_OLD) - 2._EB*V(IIG_OLD,JJG_OLD,KKG_OLD) &
+             + V(IIG_OLD,JJG_OLD-1,KKG_OLD)) / DY(JJG_OLD)**2 &
+             + (V(IIG_OLD,JJG_OLD,KKG_OLD+1) - 2._EB*V(IIG_OLD,JJG_OLD,KKG_OLD) &
+             + V(IIG_OLD,JJG_OLD,KKG_OLD-1)) / DZ(KKG_OLD)**2
+      LAP_W = (W(IIG_OLD+1,JJG_OLD,KKG_OLD) - 2._EB*W(IIG_OLD,JJG_OLD,KKG_OLD) &
+             + W(IIG_OLD-1,JJG_OLD,KKG_OLD)) / DX(IIG_OLD)**2 &
+             + (W(IIG_OLD,JJG_OLD+1,KKG_OLD) - 2._EB*W(IIG_OLD,JJG_OLD,KKG_OLD) &
+             + W(IIG_OLD,JJG_OLD-1,KKG_OLD)) / DY(JJG_OLD)**2 &
+             + (W(IIG_OLD,JJG_OLD,KKG_OLD+1) - 2._EB*W(IIG_OLD,JJG_OLD,KKG_OLD) &
+             + W(IIG_OLD,JJG_OLD,KKG_OLD-1)) / DZ(KKG_OLD)**2
+
+      ! Filter parameter b^2 from k_sgs matching: k_sgs = 0.5*b^4*sum(Lap^2)
+      LAP_MAG_SQ = LAP_U**2 + LAP_V**2 + LAP_W**2
+      IF (LAP_MAG_SQ > TWO_EPSILON_EB .AND. K_SGS > TWO_EPSILON_EB) THEN
+         B_SQ = SQRT(2._EB*K_SGS/LAP_MAG_SQ)
+      ELSE
+         B_SQ = 0._EB
+      ENDIF
+
+      ! SGS velocity = b^2 * Laplacian(u_bar)
+      LP%U_SGS = B_SQ*LAP_U
+      LP%V_SGS = B_SQ*LAP_V
+      LP%W_SGS = B_SQ*LAP_W
+      IF (TWO_D) LP%V_SGS = 0._EB
+
+      UBAR = UBAR + LP%U_SGS
+      VBAR = VBAR + LP%V_SGS
+      WBAR = WBAR + LP%W_SGS
+
+END SELECT SGS_SELECT
 
 IF (LPC%EMBER_PARTICLE) THEN
    SELECT CASE(SF%GEOMETRY)

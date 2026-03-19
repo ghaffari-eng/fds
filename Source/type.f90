@@ -122,6 +122,7 @@ TYPE LAGRANGIAN_PARTICLE_CLASS_TYPE
    INTEGER :: RADIATIVE_PROPERTY_INDEX=0  !< Index for this class of particles in radiative property table
    INTEGER :: SURF_INDEX=0                !< Surface properties for solid particle
    INTEGER :: DRAG_LAW=1                  !< Code indicating type of drag law
+   INTEGER :: SGS_MODEL=0                 !< SGS dispersion: 0=Markov-0, 1=Langevin, 2=differential filter
    INTEGER :: DEVC_INDEX=0                !< Index of device that governs this class of particles
    INTEGER :: CTRL_INDEX=0                !< Index of controller that governs this class of particles
    INTEGER :: NODE_INDEX=0                !< Index of ductnode for surface
@@ -423,6 +424,9 @@ TYPE LAGRANGIAN_PARTICLE_TYPE
    REAL(EB) :: ACCEL_Y=0._EB       !< Acceleration in y direction (m/s2)
    REAL(EB) :: ACCEL_Z=0._EB       !< Acceleration in z direction (m/s2)
    REAL(EB) :: RVC=-1._EB           !< Reciprocal of cell volume containing particle (1/m3)
+   REAL(EB) :: U_SGS=0._EB         !< SGS velocity component x for Langevin model (m/s)
+   REAL(EB) :: V_SGS=0._EB         !< SGS velocity component y for Langevin model (m/s)
+   REAL(EB) :: W_SGS=0._EB         !< SGS velocity component z for Langevin model (m/s)
 
 END TYPE LAGRANGIAN_PARTICLE_TYPE
 
