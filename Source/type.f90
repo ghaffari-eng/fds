@@ -707,6 +707,7 @@ TYPE REACTION_TYPE
    REAL(EB) :: RHO_EXPONENT                 !< Exponent of density in reaction expression
    REAL(EB) :: CRITICAL_FLAME_TEMPERATURE   !< Effective flame extinction temperature (K)
    REAL(EB) :: AUTO_IGNITION_TEMPERATURE    !< Minimum ignition temperature (K)
+   REAL(EB) :: CRITICAL_EXTINCTION_STRAIN_RATE = 0._EB !< Critical extinction strain rate a_q (1/s) for PaSR model
    REAL(EB) :: NU_O2=0._EB                  !< Oxygen coefficient in SIMPLE_CHEMISTRY model
    REAL(EB) :: NU_N2=0._EB                  !< Nitrogen coefficient in SIMPLE_CHEMISTRY model
    REAL(EB) :: NU_H2O=0._EB                 !< Water coefficient in SIMPLE_CHEMISTRY model

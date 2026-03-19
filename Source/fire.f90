@@ -997,6 +997,7 @@ IF (SUPPRESSION .AND. .NOT.EXTINCT) THEN
    SELECT CASE(EXTINCT_MOD)
       CASE(EXTINCTION_1); CALL EXTINCT_1(EXTINCT,ZZ_0,TMP_IN)
       CASE(EXTINCTION_2); CALL EXTINCT_2(EXTINCT,ZZ_0,ZZ_MIXED,TMP_IN)
+      CASE(EXTINCTION_3); CALL EXTINCT_2(EXTINCT,ZZ_0,ZZ_MIXED,TMP_IN)
    END SELECT
 ENDIF
 
@@ -1010,6 +1011,11 @@ IF (EXTINCT) THEN
    Q_REAC_OUT(:) = 0._EB
    Q_REAC_SUM(:) = 0._EB
 ENDIF
+
+! PaSR strain-based attenuation for EXTINCTION 3 (applied after thermal extinction check)
+
+IF (EXTINCT_MOD==EXTINCTION_3 .AND. .NOT.EXTINCT) &
+   CALL PASR_STRAIN_ATTENUATION(ZZ_GET,ZZ_0,Q_OUT,Q_REAC_SUM,MIX_TIME_OUT)
 
 ! Reaction rate-weighted radiative fraction
 
@@ -1485,6 +1491,61 @@ CALL GET_ENTHALPY(ZZ_HAT,H_CRIT,CFT)   ! H of products at the critical flame tem
 IF (H_0 < H_CRIT) EXTINCT = .TRUE. ! FDS Tech Guide (5.55)
 
 END SUBROUTINE EXTINCT_2
+
+
+!> \brief Apply PaSR strain-based attenuation to combustion outputs.
+!> The reacting fraction kappa = Da_sgs/(1+Da_sgs), where Da_sgs = a_q * tau_mix.
+!> When Da >> 1, kappa -> 1 (full combustion). When Da << 1, kappa -> 0 (extinction).
+!> \param ZZ_GET Species mass fractions (blended between reacted and unreacted)
+!> \param ZZ_0 Initial (unreacted) species mass fractions
+!> \param Q_OUT Heat release rate (W/m3)
+!> \param Q_REAC_SUM Per-reaction cumulative heat release
+!> \param TAU_MIX Mixing timescale (s)
+
+SUBROUTINE PASR_STRAIN_ATTENUATION(ZZ_GET,ZZ_0,Q_OUT,Q_REAC_SUM,TAU_MIX)
+
+IMPLICIT NONE
+REAL(EB), INTENT(INOUT) :: ZZ_GET(1:N_TRACKED_SPECIES),Q_OUT,Q_REAC_SUM(1:N_REACTIONS)
+REAL(EB), INTENT(IN)    :: ZZ_0(1:N_TRACKED_SPECIES),TAU_MIX
+REAL(EB) :: A_Q,DA_SGS,KAPPA
+INTEGER  :: NR
+TYPE(REACTION_TYPE), POINTER :: RN
+
+! Get critical extinction strain rate from first priority-1 reaction
+
+A_Q = 0._EB
+DO NR = 1,N_REACTIONS
+   RN => REACTION(NR)
+   IF (RN%PRIORITY == 1) THEN
+      A_Q = RN%CRITICAL_EXTINCTION_STRAIN_RATE
+      EXIT
+   ENDIF
+ENDDO
+
+IF (A_Q < TWO_EPSILON_EB) RETURN
+
+! Compute subgrid Damkohler number: Da_sgs = a_q * tau_mix
+
+DA_SGS = A_Q * TAU_MIX
+
+! PaSR reacting fraction: kappa = Da/(1+Da)
+
+KAPPA = DA_SGS / (1._EB + DA_SGS)
+
+! Force full extinction for very low Da (numerical cleanliness)
+
+IF (DA_SGS < DA_EXTINCTION * 0.01_EB) KAPPA = 0._EB
+
+! Blend species between fully reacted and unreacted states
+
+ZZ_GET = KAPPA * ZZ_GET + (1._EB - KAPPA) * ZZ_0
+
+! Scale heat release
+
+Q_OUT      = KAPPA * Q_OUT
+Q_REAC_SUM = KAPPA * Q_REAC_SUM
+
+END SUBROUTINE PASR_STRAIN_ATTENUATION
 
 
 SUBROUTINE FIRE_FORWARD_EULER(ZZ_OUT,ZZ_IN,ZZ_0,ZETA_OUT,ZETA_IN,DT_LOC,TMP_IN,RHO_HAT,CELL_MASS,TAU_MIX,&
