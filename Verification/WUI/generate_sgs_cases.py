@@ -24,8 +24,8 @@ CASES = [
     ('rw_light',   0, True,  50,  False),
     ('lv_light',   1, None,  50,  False),
     ('df_light',   2, None,  50,  False),
-    ('lv_burn',    1, None,  300, True),
-    ('df_burn',    2, None,  300, True),
+    ('lv_burn',    1, None,  100, True),   # Moderate density: more airtime than heavy, stays in domain
+    ('df_burn',    2, None,  100, True),
 ]
 
 RESOLUTIONS = [
@@ -53,7 +53,7 @@ def make_part_line(sgs_model, turb_disp, burning):
     """Build the &PART line with appropriate SGS parameters."""
     parts = ["&PART ID='EMBERS', SURF_ID='EMBER_SURF', DRAG_LAW='CYLINDER'"]
     if burning:
-        parts.append("      EMBER_PARTICLE=.TRUE.")
+        parts.append("      EMBER_PARTICLE=.TRUE., INITIAL_TEMPERATURE=400.")
     if sgs_model > 0:
         parts.append(f"      SGS_MODEL={sgs_model}")
     elif turb_disp:
@@ -72,8 +72,7 @@ def make_materials(density, burning):
       CONDUCTIVITY=0.15
       SPECIFIC_HEAT=1.3
       N_REACTIONS=1
-      A(1)=1.E5
-      E(1)=1.E5
+      REFERENCE_TEMPERATURE=500.
       SPEC_ID(1,1)='PRODUCTS'
       NU_SPEC(1,1)=0.76
       NU_MATL(1,1)=0.24
@@ -81,7 +80,7 @@ def make_materials(density, burning):
       HEAT_OF_REACTION(1)=418. /
 
 &MATL ID='CHAR'
-      DENSITY=72.
+      DENSITY=24.
       CONDUCTIVITY=0.1
       SPECIFIC_HEAT=1.0 /
 
@@ -103,9 +102,10 @@ def make_init_and_devc():
     """Build INIT lines for tracked + bulk particles and DEVC lines."""
     lines = []
 
-    # Tracked particles: individual INIT with unique IDs
+    # Tracked particles: individual INIT in a small cloud (0.5m cube)
+    # Slightly different positions let the DF model produce different trajectories
     for i in range(1, N_TRACKED + 1):
-        lines.append(f"&INIT ID='trk{i:02d}', PART_ID='EMBERS', XYZ=10.,0.,10., N_PARTICLES=1 /")
+        lines.append(f"&INIT ID='trk{i:02d}', PART_ID='EMBERS', XB=9.75,10.25,-0.25,0.25,9.75,10.25, N_PARTICLES=1 /")
 
     # Bulk particles
     n_bulk = N_TOTAL - N_TRACKED
