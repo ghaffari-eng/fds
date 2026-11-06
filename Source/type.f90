@@ -157,6 +157,7 @@ TYPE LAGRANGIAN_PARTICLE_CLASS_TYPE
    LOGICAL :: EMBER_PARTICLE=.FALSE.                 !< Flag indicating if particles can become flying embers
    LOGICAL :: TRACK_EMBERS=.TRUE.                    !< Flag indicating if flying embers are tracked or removed immediately
    LOGICAL :: ADHERE_TO_SOLID=.FALSE.                !< Flag indicating if particles can stick to a solid
+   LOGICAL :: SURFACE_CONTACT=.FALSE.                !< Flag indicating if resting particles exchange heat by conduction
    LOGICAL :: INCLUDE_BOUNDARY_COORD_TYPE=.TRUE.     !< This particle requires basic coordinate information
    LOGICAL :: INCLUDE_BOUNDARY_PROP1_TYPE=.TRUE.     !< This particle requires basic variables for heat and mass transfer
    LOGICAL :: INCLUDE_BOUNDARY_PROP2_TYPE=.FALSE.    !< This particle requires additional variables for heat and mass transfer
