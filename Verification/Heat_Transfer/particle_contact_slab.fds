@@ -1,0 +1,26 @@
+&HEAD CHID='particle_contact_slab', TITLE='Sphere held at 600 C resting on a thick slab: contact conduction only' /
+
+The sphere (r = 5 mm) is held at 600 C. Its contact heat, h_s pi r^2 (T_p - T_s), goes into the 2 cm x 2 cm floor cell
+beneath it, so the floor cell sees a convective-type boundary condition with h = h_s pi r^2 / A_cell = 98.17 W/m2/K and
+a gas temperature of 600 C. The exact surface temperature of a semi-infinite solid is
+T_s = T_i + (T_p - T_i) [1 - exp(b^2) erfc(b)], b = h sqrt(alpha t)/k (Carslaw and Jaeger, Sec. 2.7).
+A uniform 0.125 mm wall grid is used in the slab; with the default stretched grid the result is about 1% high.
+
+&MESH IJK=25,25,10, XB=0.0,0.5,0.0,0.5,0.0,0.2 /
+&TIME T_END=60., DT=0.02, WALL_INCREMENT=1 /
+&MISC NOISE=F /
+&RADI RADIATION=.FALSE. /
+
+&MATL ID='SLAB', DENSITY=500., CONDUCTIVITY=0.2, SPECIFIC_HEAT=1.5 /
+&SURF ID='FLOOR', MATL_ID='SLAB', THICKNESS=0.05, BACKING='INSULATED', TMP_INNER=20., HEAT_TRANSFER_COEFFICIENT=0., CELL_SIZE=1.25E-4, COLOR='GRAY' /
+&VENT MB='ZMIN', SURF_ID='FLOOR' /
+
+&MATL ID='STEEL', DENSITY=7850., CONDUCTIVITY=45., SPECIFIC_HEAT=0.46 /
+&SURF ID='HOT SPHERE', MATL_ID='STEEL', THICKNESS=0.005, GEOMETRY='SPHERICAL', TMP_FRONT=600., TMP_INNER=600., TAU_T=0., HEAT_TRANSFER_COEFFICIENT=0. /
+&PART ID='hot', SURF_ID='HOT SPHERE', HEAT_TRANSFER_COEFFICIENT_SOLID=500., SAMPLING_FACTOR=1 /
+&INIT ID='hot', PART_ID='hot', XYZ=0.25,0.25,0.004, N_PARTICLES=1 /
+
+&DEVC ID='T_floor',     QUANTITY='WALL TEMPERATURE', XYZ=0.25,0.25,0.0, IOR=3, TIME_AVERAGED=.FALSE. /
+&DEVC ID='T_neighbour', QUANTITY='WALL TEMPERATURE', XYZ=0.27,0.25,0.0, IOR=3, TIME_AVERAGED=.FALSE. /
+
+&TAIL /

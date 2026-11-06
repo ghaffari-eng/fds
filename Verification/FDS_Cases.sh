@@ -294,6 +294,9 @@ $QFDS -d Heat_Transfer convective_cooling_p01.fds
 $QFDS -d Heat_Transfer convective_cooling_p005.fds
 $QFDS -d Heat_Transfer convective_cooling_p0025.fds
 $QFDS -d Heat_Transfer convective_cooling_p00125.fds
+$QFDS -d Heat_Transfer particle_contact_cooling.fds
+$QFDS -d Heat_Transfer particle_contact_energy.fds
+$QFDS -d Heat_Transfer particle_contact_slab.fds
 $QFDS -d Heat_Transfer heat_conduction_a.fds
 $QFDS -d Heat_Transfer heat_conduction_b.fds
 $QFDS -d Heat_Transfer heat_conduction_c.fds
