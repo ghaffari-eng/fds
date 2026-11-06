@@ -4763,6 +4763,39 @@ To test the second-order accuracy of the solid phase conduction algorithm, this 
 
 
 
+\section{Contact Conduction between Particles and Solid Surfaces}
+\label{particle_contact}
+
+These cases test the conduction between a solid particle resting on a solid surface and that surface (see Section~\ref{UG-info:solid_particle_contact} of the FDS User's Guide and the FDS Technical Reference Guide). The heat flow into the particle is $h_{\rm s} A_{\rm c} (T_{\rm w}-T_{\rm p})$, where $A_{\rm c}$ is the footprint of the particle. In all three cases, radiation is turned off and the convective heat transfer coefficients of the particles and the surfaces are set to zero, so that heat moves only by contact conduction. The particles are steel ($\rho=7850$~\unit{kg/m^3}, $c=0.46$~\unit{kJ/(kg.K)}, $k=45$~\unit{W/(m.K)}) and $h_{\rm s}=500$~\unit{W/(m^2.K)}.
+
+In the case \ct{particle_contact_cooling}, four particles rest on a floor of fixed temperature, each in its own floor cell: a sphere ($r=5$~mm), a cylinder lying on its side ($r=3.2$~mm, $L=38$~mm), and a plate ($6 \times 20 \times 20$~mm), all initially at 900~\unit{\degreeCelsius} on a floor held at 20~\unit{\degreeCelsius}, and a sphere initially at 20~\unit{\degreeCelsius} on a patch of floor held at 600~\unit{\degreeCelsius}. For a particle of uniform conductivity, the contact heat flow is equivalent to a uniform heat transfer coefficient $h = h_{\rm s} A_{\rm c}/A_{\rm p}$ over the whole particle surface: $h_{\rm s}/4$ for the sphere, $h_{\rm s}/\pi$ for the cylinder and $h_{\rm s}/2$ for the plate. The exact solution for the particle surface temperature is then the series solution for transient conduction in a sphere, a long cylinder and a plane wall with a convective boundary condition~\cite{Incropera:1}. Figure~\ref{particle_contact_cooling_fig} compares the predicted and exact surface temperatures.
+
+In the case \ct{particle_contact_slab}, a sphere ($r=5$~mm) whose surface is held at 600~\unit{\degreeCelsius} rests on a thick, insulated slab ($k=0.2$~\unit{W/(m.K)}, $\rho=500$~\unit{kg/m^3}, $c=1.5$~\unit{kJ/(kg.K)}) at 20~\unit{\degreeCelsius}. The contact heat goes into the 2~cm by 2~cm floor cell beneath the sphere, which therefore sees a convective boundary condition with $h = h_{\rm s} \pi r^2/A_{\rm cell} = 98.17$~\unit{W/(m^2.K)} and a gas temperature of 600~\unit{\degreeCelsius}. The exact surface temperature of a semi-infinite solid with this boundary condition is~\cite{Incropera:1}
+\be
+   T_{\rm s}(t) = T_{\rm i} + (T_{\rm p}-T_{\rm i}) \left[ 1 - \exp\left(\beta^2\right) \, {\rm erfc}(\beta) \right] \quad ; \quad \beta = \frac{h\sqrt{\alpha t}}{k}
+\ee
+where $\alpha$ is the thermal diffusivity of the slab. A uniform wall grid of 0.125~mm is used in the slab. Figure~\ref{particle_contact_slab_fig} compares the predicted and exact surface temperatures.
+
+In the case \ct{particle_contact_energy}, three steel spheres ($r=5$~mm) at 900, 700 and 500~\unit{\degreeCelsius} rest in the same 5~cm by 5~cm floor cell of an insulated slab. Figure~\ref{particle_contact_energy_fig} compares the energy lost by the spheres with the energy gained by the floor cell.
+
+\begin{figure}[ht]
+\centering
+\includegraphics[height=2.2in]{SCRIPT_FIGURES/particle_contact_cooling}
+\caption[The \ct{particle_contact_cooling} test case]{Predicted and exact surface temperatures of a sphere, a cylinder and a plate resting on a floor held at 20~\unit{\degreeCelsius}, and of a cold sphere resting on a floor held at 600~\unit{\degreeCelsius}.}
+\label{particle_contact_cooling_fig}
+\end{figure}
+
+\begin{figure}[ht]
+\begin{tabular*}{\textwidth}{l@{\extracolsep{\fill}}r}
+\includegraphics[height=2.2in]{SCRIPT_FIGURES/particle_contact_slab} &
+\includegraphics[height=2.2in]{SCRIPT_FIGURES/particle_contact_energy}
+\end{tabular*}
+\caption[The \ct{particle_contact_slab} and \ct{particle_contact_energy} test cases]{(Left) Predicted and exact surface temperatures of a slab beneath a sphere held at 600~\unit{\degreeCelsius}. (Right) Energy lost by three spheres and gained by the floor cell beneath them.}
+\label{particle_contact_slab_fig}
+\label{particle_contact_energy_fig}
+\end{figure}
+
+
 \section{Simple Thermocouple Model}
 \label{thermocouples}
 

@@ -6304,6 +6304,44 @@ Figure~\ref{hot_rods_image} displays the distribution of radii and the mass of r
 By default, solid particles do not ``stick'' or adhere to solid surfaces like liquid droplets do. However, you can make solid particles act like liquid droplets by setting \ct{ADHERE_TO_SOLID=1} on the \ct{PART} line, in which case the particles will stick and be reassigned a new speed and direction. If the surface is horizontal, the direction is randomly chosen. If vertical, the direction is downward. The parameters \ct{HORIZONTAL_VELOCITY} and \ct{VERTICAL_VELOCITY} on the \ct{PART} line allow you to control the speed at which particles move horizontally or vertically (downward). The defaults are 0.2~m/s and 0.5~m/s, respectively. If you want the particle to truly stick and not move on a surface, set these values to 0.
 
 
+\subsection{Heat Conduction between Solid Particles and Solid Surfaces}
+\label{info:solid_particle_contact}
+
+A solid particle that rests on a solid surface, or sticks to it (\ct{ADHERE_TO_SOLID=1}), always exchanges heat with the surface by thermal radiation, and with the surrounding gas by convection. You can also add direct conduction between the particle and the surface beneath it by setting a heat transfer coefficient, \ct{HEAT_TRANSFER_COEFFICIENT_SOLID}, on the \ct{PART} line, in units of \unit{W/(m^2.K)}. The rate of heat flow into the particle is then
+\be
+   \dot{q}_{\rm c} = h_{\rm s} \, A_{\rm c} \, (T_{\rm w} - T_{\rm p})
+\ee
+where $h_{\rm s}$ is the heat transfer coefficient and $A_{\rm c}$ is the footprint of the particle, that is, its area projected onto the surface: $\pi r^2$ for a sphere, $2rL$ for a cylinder lying on its side, and $LW$ for a flat plate. $T_{\rm w}$ is the surface temperature of the wall cell beneath the particle, and $T_{\rm p}$ is the surface temperature of the particle. The same amount of heat is taken from, or added to, the wall cell. It is included in the output quantity \ct{'CPUA'} for the particle class. For example,
+\begin{lstlisting}
+&PART ID='ember', SURF_ID='CHAR', HEAT_TRANSFER_COEFFICIENT_SOLID=50. /
+\end{lstlisting}
+For solid particles, there is no conduction unless \ct{HEAT_TRANSFER_COEFFICIENT_SOLID} is set to a positive value. There is no general default value because $h_{\rm s}$ depends mainly on the thin gas gap between the particle and the surface, which is seldom known. The area of real solid-to-solid contact is very small, so most of the heat crosses the gas gap. Table~\ref{tab:solid_particle_contact} lists values of $h_{\rm s}$ for conduction through a gas gap of uniform thickness, $s$, under a sphere, a cylinder and a flat plate. Thermal radiation across the gap is not part of $h_{\rm s}$, because FDS already accounts for it.
+
+\begin{table}[ht]
+\begin{center}
+\caption[Heat transfer coefficients for gas-gap conduction under a particle]{Values of $h_{\rm s}$, in \unit{W/(m^2.K)}, for conduction through a gas gap of uniform thickness $s$ between a particle and a flat surface, per unit footprint area. Air at a mean gap temperature of 700~K ($k=0.052$~\unit{W/(m.K)}). Multiply by 0.5 for a gap at 300~K.}
+\label{tab:solid_particle_contact}
+\begin{tabular}{|l|c|c|c|c|c|}
+\hline
+Particle                             & $s=0.01$~mm & $s=0.03$~mm & $s=0.1$~mm & $s=0.3$~mm & $s=1$~mm \\ \hline
+Sphere, $r=5$~mm                     & 110         & 87          & 63         & 43         & 24       \\ \hline
+Sphere, $r=2$~mm                     & 227         & 172         & 115        & 70         & 34       \\ \hline
+Cylinder lying flat, $r=3.2$~mm      & 610         & 336         & 168        & 84         & 36       \\ \hline
+Cylinder lying flat, $r=1$~mm        & 1038        & 552         & 259        & 118        & 44       \\ \hline
+Flat plate                           & 5240        & 1747        & 524        & 175        & 52       \\ \hline
+\end{tabular}
+\end{center}
+\end{table}
+
+Note the following:
+\begin{itemize}
+\item Conduction applies to a particle resting on an upward-facing surface, or on any surface if the particle sticks to it (\ct{ADHERE_TO_SOLID=1}). The particle must be free to move; particles with \ct{STATIC=T} are not included.
+\item The particle and the surface must each be thermally thick or have a specified temperature.
+\item The heat is spread over the whole wall cell beneath the particle, which is usually much larger than the particle itself. The temperature of the surface directly under a single particle is therefore not resolved. The same is true of the heat that the particle radiates to the surface.
+\item If the footprints of all the particles on a wall cell add up to more than the area of the cell, as in a pile, the conduction of each particle is reduced in proportion. In effect, only one layer of particles touches the surface. Particles do not exchange heat with each other by conduction.
+\end{itemize}
+
+
 \subsection{Particle Orientation}
 \label{info:particle_orientation}
 
@@ -12989,7 +13027,7 @@ Keyword                                    & Type        & Description          
 \ct{GAMMA_D}                               & Real        & Section~\ref{info:particle_size}                                &                   & 2.4                   \\ \hline
 \ct{HEAT_OF_COMBUSTION}                    & Real        & Section~\ref{info:fuel_droplets}                                & kJ/kg             &                       \\ \hline
 \ct{HEAT_TRANSFER_COEFFICIENT_GAS}         & Real        & Section~\ref{thermal_part_props}                                & \unit{W/(m^2.K)}  & \rule{0pt}{2.3ex}  \\ \hline
-\ct{HEAT_TRANSFER_COEFFICIENT_SOLID}       & Real        & Section~\ref{info:surface_droplets}                             & \unit{W/(m^2.K)}  & \rule{0pt}{2.3ex}   \\ \hline
+\ct{HEAT_TRANSFER_COEFFICIENT_SOLID}       & Real        & Sections~\ref{info:surface_droplets}, \ref{info:solid_particle_contact} & \unit{W/(m^2.K)}  & \rule{0pt}{2.3ex}   \\ \hline
 \ct{HORIZONTAL_VELOCITY}                   & Real        & Section~\ref{info:surface_droplets}                             & m/s               &  0.2                  \\ \hline
 \ct{ID}                                    & Character   & Section~\ref{info:PART_Basics}                                  &                   &                       \\ \hline
 \ct{INITIAL_TEMPERATURE}                   & Real        & Section~\ref{thermal_part_props}                                & \unit{\degreeCelsius} & \ct{TMPA}            \\ \hline

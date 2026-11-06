@@ -322,6 +322,21 @@ where $\epsilon_{\rm p}$ is the emissivity of the particle, $A_{\rm p}$ is the s
 \ee
 
 
+\subsection{Conduction between a Resting Particle and a Solid Surface}
+\label{particle_contact}
+
+A solid particle that rests on a solid surface is placed in the gas cell adjacent to the surface. Here, ``resting'' means attached to an upward-facing wall cell, or to any wall cell if the particle is set to adhere to solids. Its radiation reaches the surface through Eq.~(\ref{eq:qr}), and it exchanges heat with the gas by convection. If the user specifies a heat transfer coefficient, $h_{\rm s}$, the particle also exchanges heat with the surface by conduction:
+\be
+   \dq_{\rm c} = h_{\rm s} \, A_{\rm p,c} \, (T_{\rm s} - T_{\rm p}) \label{eq:particle_contact}
+\ee
+Here $A_{\rm p,c}$ is the footprint of the particle, that is, its area projected onto the surface: $\pi r_{\rm p}^2$ for a sphere, $2 r_{\rm p} L$ for a cylinder lying on its side, and $L W$ for a flat plate. $T_{\rm s}$ is the surface temperature of the wall cell beneath the particle and $T_{\rm p}$ is the surface temperature of the particle. In the one-dimensional heat conduction calculation within the particle, Eq.~(\ref{eq:particle_contact}) acts as an additional heat transfer coefficient, $h_{\rm s} A_{\rm p,c}/A_{\rm p}$, at the particle surface, and it is treated implicitly in $T_{\rm p}$. The same heat, multiplied by the number of real particles that the computational particle represents, is removed from or added to the wall cell beneath the particle in the same way as the heat transfer between liquid droplets and a solid surface, Eq.~(\ref{droplet_solid_temp}). That is, it is spread over the area of the wall cell. If the footprints of all the particles resting on a wall cell add up to more than the area of the cell, $h_{\rm s}$ is reduced for each of them by the ratio of the cell area to the sum of the footprints, so that the total contact area cannot exceed the area of the cell.
+
+The coefficient $h_{\rm s}$ represents conduction across the thin gas gap between the particle and the surface, plus any solid-to-solid contact. For a particle resting under its own weight, the real contact area is a very small fraction of the footprint~\cite{Cooper:1969}, so the gas gap dominates. For a uniform gap of thickness $s$ under an isothermal particle, one-dimensional conduction across the local gap gives~\cite{Batchelor:1977}
+\be
+   h_{\rm s} = \frac{k_{\rm g}}{A_{\rm p,c}} \int_{A_{\rm p,c}} \frac{\d A}{s + \ell(\bx)}
+\ee
+where $\ell(\bx)$ is the local distance between the particle and the surface and $k_{\rm g}$ is the gas conductivity. Radiation across the gap is not included in $h_{\rm s}$ because it is already accounted for by Eq.~(\ref{eq:qr}). By default, there is no conduction between solid particles and surfaces.
+
 \subsection{Porous Media (Filters, Screens, Metal Meshes, and Similar Materials)}
 
 Air filters, screens, grating, and similar flow obstructions can all be considered
