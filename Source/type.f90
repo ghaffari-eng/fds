@@ -74,7 +74,7 @@ TYPE LAGRANGIAN_PARTICLE_CLASS_TYPE
    REAL(EB) :: HORIZONTAL_VELOCITY        !< Horizontal velocity component (m/s) of particle stuck to a solid surface
    REAL(EB) :: MASS_TRANSFER_COEFFICIENT        !< Mass transfer coefficient from gas to liquid droplet (kg/m2/s)
    REAL(EB) :: HEAT_TRANSFER_COEFFICIENT_GAS    !< Heat transfer coefficient from gas to liquid droplet (W/m2/K)
-   REAL(EB) :: HEAT_TRANSFER_COEFFICIENT_SOLID  !< Heat transfer coefficient from solid surface to liquid droplet (W/m2/K)
+   REAL(EB) :: HEAT_TRANSFER_COEFFICIENT_SOLID  !< Heat transfer coefficient from solid surface to droplet or particle (W/m2/K)
    REAL(EB) :: DRAG_COEFFICIENT(3)        !< Drag coefficient in 3 coordinate directions
    REAL(EB) :: SURFACE_DIAMETER           !< Effective liquid droplet diameter (m) on a solid surface
    REAL(EB) :: DRIP_DIAMETER=-1._EB       !< Effective liquid droplet diameter (m) of a droplet dripping off of a surface
@@ -330,6 +330,7 @@ TYPE BOUNDARY_PROP1_TYPE
    REAL(EB) :: Q_DOT_G_PP=0._EB      !< Heat release rate per unit area (W/m2)
    REAL(EB) :: Q_DOT_O2_PP=0._EB     !< Heat release rate per unit area (W/m2) due to oxygen consumption
    REAL(EB) :: Q_CONDENSE=0._EB      !< Heat release rate per unit area (W/m2) due to gas condensation
+   REAL(EB) :: Q_CONTACT=0._EB       !< Heat flux into a solid particle from the surface it rests on, per unit particle area (W/m2)
    REAL(EB) :: BURN_DURATION=0._EB   !< Duration of a specified fire (s)
    REAL(EB) :: Q_IN_SMOOTH=0._EB     !< Smoothed incident flux for the S_Pyro method (kJ)
    REAL(EB) :: T_MATL_PART=0._EB     !< Time interval for current value in PART_MASS and PART_ENTHALPY arrays (s)
@@ -350,7 +351,7 @@ END TYPE BOUNDARY_PROP1_TYPE
 TYPE BOUNDARY_PROP2_TYPE
 
    REAL(EB), ALLOCATABLE, DIMENSION(:) :: A_LP_MPUA           !< Accumulated liquid droplet mass per unit area (kg/m2)
-   REAL(EB), ALLOCATABLE, DIMENSION(:) :: LP_CPUA             !< Liquid droplet cooling rate unit area (W/m2)
+   REAL(EB), ALLOCATABLE, DIMENSION(:) :: LP_CPUA             !< Cooling rate per unit area by droplets or resting particles (W/m2)
    REAL(EB), ALLOCATABLE, DIMENSION(:) :: LP_EMPUA            !< Ember masss generated per unit area (kg/m2)
    REAL(EB), ALLOCATABLE, DIMENSION(:) :: LP_MPUA             !< Liquid droplet mass per unit area (kg/m2)
    REAL(EB), ALLOCATABLE, DIMENSION(:) :: LP_TEMP             !< Liquid droplet mean temperature (K)
