@@ -5,7 +5,7 @@ by contact conduction, Q = h_s A_c (T_w - T_s), where A_c is the particle footpr
 uniform conductivity this is a convective-type boundary condition with h = h_s A_c / A over the whole particle surface
 (sphere h_s/4, cylinder lying flat h_s/pi, plate h_s/2). The exact surface temperature is the series solution for transient
 conduction in a sphere, a long cylinder and a plate (Incropera et al., Fundamentals of Heat and Mass Transfer, Sec. 5.6).
-Sphere, cylinder and plate start at 900 C on a 20 C floor. A fourth sphere starts at 20 C on a patch of floor held at 600 C.
+Sphere, cylinder and plate start at 900 C on a 20 C floor. A fourth sphere starts at 20 C on top of a small block held at 600 C.
 
 &MESH IJK=12,4,4, XB=0.0,0.6,0.0,0.2,0.0,0.2 /
 &TIME T_END=200., DT=0.05 /
@@ -14,8 +14,8 @@ Sphere, cylinder and plate start at 900 C on a 20 C floor. A fourth sphere start
 
 &SURF ID='COLD FLOOR', TMP_FRONT=20., TAU_T=0., HEAT_TRANSFER_COEFFICIENT=0., COLOR='GRAY' /
 &SURF ID='HOT FLOOR',  TMP_FRONT=600., TAU_T=0., HEAT_TRANSFER_COEFFICIENT=0., COLOR='RED' /
-&VENT XB=0.50,0.55,0.10,0.15,0.0,0.0, SURF_ID='HOT FLOOR' /
 &VENT MB='ZMIN', SURF_ID='COLD FLOOR' /
+&OBST XB=0.50,0.55,0.10,0.15,0.0,0.05, SURF_ID='HOT FLOOR' /
 
 &MATL ID='STEEL', DENSITY=7850., CONDUCTIVITY=45., SPECIFIC_HEAT=0.46 /
 
@@ -32,7 +32,7 @@ Sphere, cylinder and plate start at 900 C on a 20 C floor. A fourth sphere start
 &INIT ID='sphere',      PART_ID='sphere',      XYZ=0.075,0.125,0.004, N_PARTICLES=1 /
 &INIT ID='cylinder',    PART_ID='cylinder',    XYZ=0.225,0.125,0.004, N_PARTICLES=1 /
 &INIT ID='plate',       PART_ID='plate',       XYZ=0.375,0.125,0.004, N_PARTICLES=1 /
-&INIT ID='cold sphere', PART_ID='cold sphere', XYZ=0.525,0.125,0.004, N_PARTICLES=1 /
+&INIT ID='cold sphere', PART_ID='cold sphere', XYZ=0.525,0.125,0.054, N_PARTICLES=1 /
 
 &DEVC ID='T_sphere',      QUANTITY='WALL TEMPERATURE', INIT_ID='sphere',      TIME_AVERAGED=.FALSE. /
 &DEVC ID='T_cylinder',    QUANTITY='WALL TEMPERATURE', INIT_ID='cylinder',    TIME_AVERAGED=.FALSE. /
